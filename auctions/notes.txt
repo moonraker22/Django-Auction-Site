@@ -1,0 +1,157 @@
+Pagination
+                <div class="col-12">
+                    <span class="step-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; first</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                        {% endif %}
+                
+                        <span class="current">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                        </span>
+                
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
+
+ <div>
+                <div class="" >
+    
+                    <ul class="pagination">
+                        {% if books.has_previous %}
+                            <li><a href="{% url 'filter_and_pagination:listing' %}?page={{books.previous_page_number}}"><span class="glyphicon glyphicon-chevron-left"></span></a></li>
+                        {% endif %}
+    
+                        {% for num in books.paginator.page_range %}
+                            {% if books.number == num %}
+                                <li class="active"><a href="{% url 'filter_and_pagination:listing' %}?page={{num}}">{{num}}</a></li>
+                            {% elif num > books.number|add:'-3' and num < books.number|add:'3' %}
+                                <li><a href="{% url 'filter_and_pagination:listing' %}?{{filter_url}}&page={{num}}">{{num}}</a></li>
+                            {% endif %}
+                        {% endfor %}
+    
+                        {% if books.has_next %}
+                            <li><a href="{% url 'filter_and_pagination:listing' %}?page={{books.next_page_number}}"><span class="glyphicon glyphicon-chevron-right"></span></a></li>
+                        {% endif %}
+                        
+                    </ul>
+                </div>
+            </div>
+
+from django import template
+from django.contrib.humanize.templatetags.humanize import intcomma
+ 
+register = template.Library()
+ 
+@register.filter
+def prepend_dollars(dollars):
+    if dollars:
+        dollars = round(float(dollars), 2)
+        return "$%s%s" % (intcomma(int(dollars)), ("%0.2f" % dollars)[-3:])
+    else:
+        return ''
+Now in your template, put:
+
+{{ my_float_var | prepend_dollars }}
+
+ <div class="col-md-4">
+      <h3>{{ listing.title }}</h3>
+      <p>{{ listing.description }}</p>
+      <p>Starting Bid: {{ listing.starting_bid|prepend_dollars }}</p>
+      <p>Ending: {{ listing.ending|date:"F j, Y, g:i a" }}</p>
+      <p>
+        <a href="{{ listing.get_absolute_url }}" class="btn btn-primary">View Listing</a>
+      </p>
+       <h3 class="text-center">{{ listing.title }}</h3>
+            <div class="mt-2 mb-2">
+                <img class="img-fluid img-thumbnail" src="{{ listing.image_url }}" alt="{{ listing.title }}">
+            </div>
+            <p>{{ listing.description }}</p>
+            <p>{{ listing.starting_bid|prepend_dollars }}</p>
+            <p>Start Date: {{ listing.start_date }}</p>
+            <p>End Date: {{ listing.end_date }}</p>
+            <p>{{ listing.user.username }}</p>
+            <p>{{ listing.user.email }}</p>
+            <p>{{ listing.catagory }}</p>
+
+            <a href="{{ listing.get_absolute_url }}" class="btn btn-primary">View Listing</a>
+
+           
+
+
+class WatchlistManager(models.Manager):
+    def add_item(self, listing, user):
+        if not Watchlist.objects.filter(listing=listing, user=user):
+            entry = Watchlist(listing=listing, user=user)
+            self.save()
+            return True
+
+    def remove_item(self, listing, user):
+        entry = Watchlist(listing=listing, user=user)
+        if entry:
+            entry.delete()
+            return True
+
+     objects = WatchlistManager()
+
+      const addToWatchlist = document.getElementById('addToWatchlist');
+            addToWatchlist.addEventListener('click', function () {
+                $.ajax({
+                        url: "{% url 'add_to_watchlist' %}",
+                        type: 'POST',
+                        data: {
+                            listing_id: addToWatchlist.value,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        },
+                        success: function (data) {
+                            alert('Added to watchlist');
+                           
+                    }
+                });
+            });
+
+ # class CreateListing(forms.ModalForm):
+    #     title = forms.CharField(
+    #         min_length=4,
+    #         max_length=100,
+    #         label="Title",
+    #         widget=forms.TextInput(
+    #             attrs={"placeholder": "Title", "class": "form-control" "mb-3"}
+    #         ),
+    #     )
+    #     description = forms.CharField(
+    #         max_length=1000,
+    #         label="Description",
+    #         widget=forms.TextInput(
+    #             attrs={"placeholder": "Description", "class": "form-control" "mb-3"}
+    #         ),
+    #     )
+    #     starting_bid = forms.DecimalField(
+    #         label="Starting Bid",
+    #         widget=forms.NumberInput(
+    #             attrs={"placeholder": "Starting Bid", "class": "form-control" "mb-3"}
+    #         ),
+    #     )
+    #     category = forms.ChoiceField(
+    #         choices=[
+
+
+
+class CreateForm(forms.ModelForm):
+    class Meta:
+        model = Listing
+        fields = ["title", "description", "starting_bid", "category", "image_url", "end_date"]
+
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "description": forms.Textarea(attrs={"class": "form-control"}),
+            "starting_bid": forms.NumberInput(attrs={"class": "form-control"}),
+            "category": forms.Select(attrs={"class": "form-control"}),
+            "image_url": forms.TextInput(attrs={"class": "form-control"}),
+            "end_date": forms.DateInput(attrs={"class": "form-control"}),
+        }
+
+

@@ -1,0 +1,172 @@
+{% extends "auctions/layout.html" %}
+{% load prepend_dollars %}
+{% load add_watchlist %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1>{{ listing.title }}</h1>
+            {% if not is_active %}
+                <h3>This auction has ended</h3>
+                {% if is_winner %}
+                    <h3>You won!</h3>
+                {% elif winner %}
+                    <p>The winning bidder is {{ winner }}</p>
+                {% endif %}
+            {% endif %}
+            <br />
+            <div class="row">
+                <div class="col-md-6">
+                    <img src="{{ listing.image_url }}" class="img-fluid img-thumbnail mb-4" />
+                    <br />
+                    <div>
+                        {% if watchlist_true %}
+                            <btn class="btn btn-outline-success m-3" id="removeFromWatchlist" value="{{ listing.id }}">Remove From Watchlist</btn>
+                            <btn class="btn btn-primary m-3" id="addToWatchlist" value="{{ listing.id }}"
+                                style="display: none">Add to Watchlist
+                            </btn>
+
+                        {% else %}
+                            <btn class="btn btn-outline-success m-3" id="removeFromWatchlist" value="{{ listing.id }}"
+                                style="display: none">
+                                Remove From Watchlist</btn>
+
+                            <btn class="btn btn-primary m-3" id="addToWatchlist" value="{{ listing.id }}">Add to
+                                Watchlist</btn>
+                        {% endif %}
+                    </div>
+                    <br />
+                    <div>
+                    {% if is_active %}
+                    {% if is_owner %}
+                        <a href="{% url 'update_listing' listing.slug %}" class="btn btn-primary m-3">Edit Listing</a>
+                        <a href="{% url 'close_listing' listing.slug %}" class="btn btn-danger m-3" id="end-auction">End Auction</a>
+                    {% endif %}
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border-bottom mb-2">
+                        <h3>Description</h3>
+                    </div>
+                    <p class="lead">{{ listing.description }}</p>
+                    <p><strong>Starting Bid: {{ listing.starting_bid|prepend_dollars }}</strong></p>
+                    {% if is_active %}
+                    <p><strong>Auction Ends: {{ listing.end_date }}</strong></p>
+                    {% endif %}
+                    <p><strong>{{ listing.seller }}</strong></p>
+                    <br />
+                    {% if is_active %}
+                    <div class="border-bottom mb-2">
+                        <h3>Place A Bid</h3>
+                        <form class="form-control" role="form" action="{% url 'place_bid' listing.slug %}" method="post">
+                            <div class="form-group">
+                                {% csrf_token %}
+                                {{ bid_form|crispy }}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    <div class=" border-bottom mb-2">
+                        <h3>Bid History</h3>
+                        {% if not is_active %}
+                        {% if highest_bidder %}
+                            <p>The highest bidder is {{ highest_bidder }} </p>
+                        {% else %}
+                            <p>No bids have been placed on this listing</p>
+                        {% endif %}            
+                        {% endif %}
+                        {% if bids %}
+                        {% for bid in bids %}
+                        <p>{{ bid.user }}: {{ bid.amount|prepend_dollars }}</p>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="m-2"
+                        <h3>Comments</h3>
+                        <form action="{% url 'add_a_comment' listing.slug %}" method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <input type="submit" class="btn btn-primary" value="Comment" role="button" />
+                        </form>
+                        {% if comments %}  
+                        {% for comment in comments %}
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ comment.user }} said:</h5>
+                                <p class="card-text">{{ comment.text }}</p>
+                                <p class="card-text"><small class="text-muted">{{ comment.created }}</small></p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {% endblock body %}
+        {% block scripts %}
+        <script>
+        try {
+        const addToWatchlist = document.getElementById('addToWatchlist');
+        addToWatchlist.addEventListener('click', function () {
+              fetch('{% url "add_to_watchlist" %}', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'csrfmiddlewaretoken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({
+                  listing_id: '{{ listing.id }}',
+                  user: '{{ user }}',
+                  csrfmiddlewaretoken: '{{ csrf_token }}',
+                })
+              }).then(r => r.json().then(data => (
+                  {status: r.status, body: data})
+                  )).then(data => {
+                    if (data.status === 200) {
+                        console.log(data.body);
+                        addToWatchlist.style.display = 'none';
+                        document.getElementById('removeFromWatchlist').style.display = 'initial';
+                    }
+                  })
+              .catch(error => console.error(error));
+              });
+        } catch (error) {
+            console.log(error);
+        }
+        try {
+        const removeFromWatchlist = document.getElementById('removeFromWatchlist');
+        removeFromWatchlist.addEventListener('click', function () {
+                fetch('{% url "remove_from_watchlist" %}', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'csrfmiddlewaretoken': '{{ csrf_token }}',
+                      },
+                    body: JSON.stringify({
+                      listing_id: '{{ listing.id }}',
+                      user: '{{ user }}',
+                      csrfmiddlewaretoken: '{{ csrf_token }}',
+                    })
+            }).then(r => r.json().then(data => (
+                {status: r.status, body: data})
+                )).then(data => {
+                    if (data.status === 200) {
+                        console.log(data.body);
+                        removeFromWatchlist.style.display = 'none';
+                        document.getElementById('addToWatchlist').style.display = 'initial';
+                      }
+                    })
+                .catch(error => console.error(error));
+                });
+        } catch (error) {
+            console.log(error);
+        }
+        </script>
+        {% endblock scripts %}

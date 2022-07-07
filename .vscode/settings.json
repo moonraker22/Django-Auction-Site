@@ -1,0 +1,12 @@
+{
+    "python.formatting.provider": "black",
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "auction",
+            "database": "${workspaceFolder:commerce}/db.sqlite3"
+        }
+    ],
+    "python.pythonPath": "/home/moonraker22/.local/share/virtualenvs/commerce-mPbzZbPJ/bin/python"
+}
